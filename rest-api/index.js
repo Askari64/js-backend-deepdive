@@ -1,8 +1,12 @@
 const express = require("express");
+const fs = require("fs");
 const users = require("./MOCK_DATA.json");
 
 const app = express();
 const PORT = 8000;
+
+//Middleware
+app.use(express.urlencoded({ extended: false }));
 
 //SSR
 app.get("/users", (req, res) => {
@@ -21,7 +25,18 @@ app.get("/users", (req, res) => {
 });
 
 //REST API
-app.get("/api/users", (req, res) => res.json(users));
+app
+  .route("/api/users/")
+  .get((req, res) => {
+    return res.json(user);
+  })
+  .post((req, res) => {
+    const body = req.body;
+    users.push({ id: users.length + 1, ...body });
+    fs.writeFile("./MOCK_DATA.json", JSON.stringify(users), (err, data) => {
+      return res.json({ status: "successful" });
+    });
+  });
 
 //Dynamic Routers Merged Actions
 app
@@ -32,12 +47,39 @@ app
     return res.json(user);
   })
   .patch((req, res) => {
-    //edit user with id
-    return res.json({ status: "pening" });
+    const id = Number(req.params.id);
+    const index = users.findIndex((user) => user.id === id);
+    if (index === -1) {
+      return res.status(404).json({ message: "User does not exist" });
+    }
+    const updateUser = { ...users[index], ...req.body };
+    users[index] = updateUser;
+    fs.writeFile(
+      "./MOCK_DATA.json",
+      JSON.stringify(users, null, 2),
+      (err, data) => {
+        if (err) {
+          return res
+            .status(500)
+            .json({ message: "Error occoured - Failed to update" });
+        }
+      }
+    );
+    return res.json({status: 'Successfully patched'})
   })
   .delete((req, res) => {
-    //delete user with id
-    return res.json({ status: "pending" });
+    const id = Number(req.params.id);
+    const index = users.findIndex((user) => user.id === id);
+    if (index !== -1) {
+      users.splice(index, 1);
+      fs.writeFile(
+        "./MOCK_DATA.json",
+        JSON.stringify(users, null, 2),
+        (err, data) => {
+          return res.json({ status: "Successfully deleted" });
+        }
+      );
+    } else return res.status(404).json({ message: "user not found" });
   });
 
 app.listen(PORT, () => console.log("🟢 Server Started"));
