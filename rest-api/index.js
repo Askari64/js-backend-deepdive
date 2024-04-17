@@ -28,7 +28,8 @@ app.get("/users", (req, res) => {
 app
   .route("/api/users/")
   .get((req, res) => {
-    return res.json(user);
+    res.setHeader("X-myName", "Askari");
+    return res.json(users);
   })
   .post((req, res) => {
     const body = req.body;
@@ -65,7 +66,7 @@ app
         }
       }
     );
-    return res.json({status: 'Successfully patched'})
+    return res.json({ status: "Successfully patched" });
   })
   .delete((req, res) => {
     const id = Number(req.params.id);
